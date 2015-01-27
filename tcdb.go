@@ -2,14 +2,16 @@
 package tcdb
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"io"
 	"launchpad.net/gommap"
 	"os"
 )
 
 var BufferTooSmallError = errors.New("Not enough space in buffer")
-
-type Cdbi uint32
+var TooManyRecordsError = errors.New("Could not save all records")
 
 type CDBReader struct {
 	f     *os.File
@@ -98,24 +100,39 @@ const (
 	PUT_WARN
 )
 
+const write_bufsize = 10240
+
+type ioSWC interface {
+	io.Writer
+	io.Seeker
+	io.Closer
+}
+
 type CDBWriter struct {
-	f      *os.File
-	dpos   uint32
-	rcnt   uint32
-	buffer []byte
-	bufpos uint32
-	recs   [256]*recptr
+	file ioSWC
+	b    *bufio.Writer
+	dpos uint32
+	rcnt uint32
+	tabs [256]*table
 }
 
 func Create(fn string) (*CDBWriter, error) {
-	return nil, nil
+	f, err := os.Create(fn)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create file: %s", err)
+	}
+
+	buf := bufio.NewWriterSize(f, write_bufsize)
+	buf.Write(make([]byte, 2048))
+	return &CDBWriter{file: f, b: buf, dpos: 2048}, nil
 }
 
 func (w *CDBWriter) Add(k, v []byte) error {
+	w.add(cdb_hash(k), k, v)
 	return nil
 }
 
-func (w *CDBWriter) GotKey(k []byte) bool {
+func (w *CDBWriter) Get(k []byte) bool {
 	return false
 }
 
@@ -124,5 +141,10 @@ func (w *CDBWriter) Put(k, v []byte, mode CDBPutMode) error {
 }
 
 func (w *CDBWriter) Close() error {
-	return nil
+	w.b.Flush()
+	if err := w.finish(); err != nil {
+		_ = w.file.Close()
+		return err
+	}
+	return w.file.Close()
 }
