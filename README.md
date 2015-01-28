@@ -1,3 +1,7 @@
-This will change...
+TCDB - minuature golang clone of tinycdb library
 
-a lot.
+This will change... a lot.
+
+
+Credits:
+* Michael Tokarev's tinycdb [http://www.corpit.ru/mjt/tinycdb.html]
