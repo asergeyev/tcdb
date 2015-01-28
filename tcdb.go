@@ -14,7 +14,11 @@ var BufferTooSmallError = errors.New("Not enough space in buffer")
 var TooManyRecordsError = errors.New("Could not save all records")
 var SomethingIsWrongError = errors.New("Issue reading CDB (a.k.a. protocol error)")
 
-var Hashfunc = classic_cdb_hash
+var Hashfunc func([]byte) uint32
+
+func init() {
+	Hashfunc = classic_cdb_hash
+}
 
 type CDBReader struct {
 	ioR
@@ -163,10 +167,10 @@ func (c *key_iterator) FindNext() error {
 
 // #define cdb_seqinit(cptr, cdbp) ((*(cptr))=2048)
 // int cdb_seqnext(unsigned *cptr, struct cdb *cdbp);
-type CDBPutMode byte
+type putmode byte
 
 const (
-	PUT_ADD = CDBPutMode(iota)
+	PUT_ADD = putmode(iota)
 	PUT_REPLACE
 	PUT_INSERT
 	PUT_WARN
@@ -202,7 +206,7 @@ func (w *CDBWriter) Has(k []byte) bool {
 	return false
 }
 
-func (w *CDBWriter) Put(k, v []byte, mode CDBPutMode) error {
+func (w *CDBWriter) Put(k, v []byte, mode putmode) error {
 	panic("Put is not implemented yet")
 	return nil
 }
