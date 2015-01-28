@@ -1,5 +1,7 @@
 package tcdb
 
+import "io"
+
 type recptr struct {
 	hval, rpos uint32
 }
@@ -9,7 +11,19 @@ type table struct {
 	recs []*recptr
 }
 
-func cdb_hash(buf []byte) uint32 {
+type ioW interface {
+	io.Writer
+	io.Seeker
+	io.Closer
+}
+
+type ioR interface {
+	io.Writer
+	io.Seeker
+	io.Closer
+}
+
+func classic_cdb_hash(buf []byte) uint32 {
 	hash := uint32(5381)
 	for _, b := range buf {
 		hash = (hash + (hash << 5)) ^ uint32(b)

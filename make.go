@@ -1,9 +1,5 @@
 package tcdb
 
-import (
-	"fmt"
-)
-
 func (w *CDBWriter) finish() error {
 	if ((0xffffffff - w.dpos) >> 3) < w.rcnt {
 		return TooManyRecordsError
@@ -65,15 +61,14 @@ func (w *CDBWriter) finish() error {
 	w.b.Flush()
 	p := make([]byte, 2048)
 	for i := range hpos {
-		fmt.Println(hcnt[i])
 		cdb_pack(hpos[i], p[i<<3:])
 		cdb_pack(hcnt[i], p[(i<<3)+4:])
 	}
-	_, err := w.file.Seek(0, 0)
+	_, err := w.ioW.Seek(0, 0)
 	if err != nil {
 		return err
 	}
-	w.file.Write(p) // unbuffered here
+	w.ioW.Write(p) // unbuffered here
 
 	return nil
 }
